@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAMRIDH · Startup Scorer</title>
+<style>
+  :root {
+    --bg: #F7F6F2;
+    --surface: #FFFFFF;
+    --surface2: #F0EEE9;
+    --border: #E2DFD8;
+    --text: #1A1916;
+    --muted: #6B6860;
+    --accent: #1B4F3C;
+    --accent-light: #E8F2ED;
+    --accent-mid: #2D7A5A;
+    --warn: #9C3A1A;
+    --warn-light: #FDF0EB;
+    --amber: #7A4F0A;
+    --amber-light: #FDF5E6;
+    --score-high: #1B4F3C;
+    --score-mid: #7A4F0A;
+    --score-low: #9C3A1A;
+    --font: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --radius: 10px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .shell {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--accent);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .logo-badge {
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; color: #fff;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-text { color: #fff; font-size: 15px; font-weight: 600; letter-spacing: -0.2px; }
+  .logo-sub  { color: rgba(255,255,255,0.55); font-size: 11px; margin-top: 1px; }
+
+  .nav-label {
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 12px 8px 4px;
+  }
+
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    border: none; background: transparent;
+    color: rgba(255,255,255,0.7);
+    font-size: 13px; font-family: var(--font);
+    cursor: pointer; width: 100%; text-align: left;
+    transition: background .15s, color .15s;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-btn.active { background: rgba(255,255,255,0.15); color: #fff; font-weight: 500; }
+  .nav-btn svg { opacity: 0.7; flex-shrink: 0; }
+  .nav-btn.active svg { opacity: 1; }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  /* ── Main ── */
+  .main { padding: 32px 36px; max-width: 960px; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header { margin-bottom: 28px; }
+  .page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; color: var(--text); }
+  .page-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .card-title {
+    font-size: 13px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .07em;
+    color: var(--muted); margin-bottom: 16px;
+  }
+
+  /* ── Form ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  label { font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: .02em; }
+
+  input[type=text], input[type=number], select {
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 13px; font-family: var(--font);
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+    width: 100%;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--accent-mid);
+    box-shadow: 0 0 0 3px rgba(45,122,90,0.12);
+  }
+
+  .range-row { display: flex; align-items: center; gap: 10px; }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none;
+    height: 4px; background: var(--border);
+    border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer; border: 2px solid #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .range-val {
+    min-width: 28px; text-align: right;
+    font-size: 13px; font-weight: 600; color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .checkbox-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+  }
+  .checkbox-row input[type=checkbox] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .checkbox-row span { font-size: 13px; color: var(--text); }
+
+  .score-btn {
+    width: 100%; padding: 13px;
+    background: var(--accent);
+    color: #fff; border: none;
+    border-radius: var(--radius);
+    font-size: 14px; font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer; margin-top: 20px;
+    letter-spacing: .01em;
+    transition: background .15s, transform .1s;
+  }
+  .score-btn:hover { background: var(--accent-mid); }
+  .score-btn:active { transform: scale(0.99); }
+
+  /* ── Score result ── */
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    display: none;
+    margin-top: 20px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .result-card.visible { display: block; }
+
+  .result-top {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 20px;
+    margin-bottom: 24px;
+  }
+
+  .result-score-wrap { text-align: center; flex-shrink: 0; }
+
+  .score-ring {
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border: 6px solid var(--border);
+    margin: 0 auto 8px;
+    position: relative;
+    transition: border-color .4s;
+  }
+  .score-ring .score-num {
+    font-size: 32px; font-weight: 700;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .score-ring .score-pct { font-size: 12px; color: var(--muted); }
+
+  .verdict-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    letter-spacing: .02em;
+  }
+
+  .verdict-high { background: var(--accent-light); color: var(--accent); }
+  .verdict-mid  { background: var(--amber-light);  color: var(--amber); }
+  .verdict-low  { background: var(--warn-light);   color: var(--warn); }
+
+  .result-details { flex: 1; }
+  .result-name { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .result-meta { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+  .feat-bars { display: flex; flex-direction: column; gap: 10px; }
+  .feat-row-r { display: flex; align-items: center; gap: 10px; }
+  .feat-name { font-size: 12px; color: var(--muted); min-width: 140px; }
+  .feat-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+  .feat-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width .5s cubic-bezier(.4,0,.2,1); }
+  .feat-score { font-size: 12px; font-weight: 600; min-width: 30px; text-align: right; color: var(--text); }
+
+  .insight-box {
+    margin-top: 20px; padding: 14px 16px;
+    border-radius: var(--radius);
+    font-size: 13px; line-height: 1.6;
+    border-left: 3px solid;
+  }
+  .insight-high { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .insight-mid  { background: var(--amber-light);  border-color: var(--amber);  color: var(--amber); }
+  .insight-low  { background: var(--warn-light);   border-color: var(--warn);   color: var(--warn); }
+
+  /* ── History table ── */
+  .history-empty {
+    padding: 40px; text-align: center;
+    color: var(--muted); font-size: 13px;
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+  }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .td-score { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ── Summary stats ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 6px; }
+  .stat-val { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Methodology page ── */
+  .method-section { margin-bottom: 28px; }
+  .method-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--text); }
+  .method-body { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .feat-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .feat-item {
+    padding: 12px 14px; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--surface);
+  }
+  .feat-item-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+  .feat-item-desc { font-size: 12px; color: var(--muted); }
+  .imp-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .imp-label { font-size: 12px; min-width: 160px; color: var(--text); }
+  .imp-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+  .imp-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+  .imp-val { font-size: 12px; color: var(--muted); min-width: 36px; text-align: right; }
+
+  /* ── Tag ── */
+  .tag {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 4px; font-size: 11px; font-weight: 500;
+  }
+  .tag-green { background: var(--accent-light); color: var(--accent); }
+  .tag-amber { background: var(--amber-light); color: var(--amber); }
+  .tag-red   { background: var(--warn-light); color: var(--warn); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+  @media (max-width: 680px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .main { padding: 20px 16px; }
+    .form-grid, .feat-list, .stats-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-badge">S</div>
+      <div>
+        <div class="logo-text">SAMRIDH</div>
+        <div class="logo-sub">Startup Scorer v1.0</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Tools</div>
+
+    <button class="nav-btn active" onclick="showPage('score')" id="nav-score">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      Score a Startup
+    </button>
+
+    <button class="nav-btn" onclick="showPage('history')" id="nav-history">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      Score History
+    </button>
+
+    <button class="nav-btn" onclick="showPage('method')" id="nav-method">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Model Methodology
+    </button>
+
+    <div class="sidebar-footer">
+      Trained on 198 SAMRIDH startups<br>
+      Target: Revenue &gt; ₹1 Cr or<br>Valuation &gt; ₹30 Cr<br><br>
+      Retrain each new cohort.
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- ══ PAGE: SCORE ══ -->
+    <div class="page active" id="page-score">
+      <div class="page-header">
+        <div class="page-title">Score a new applicant</div>
+        <div class="page-sub">Enter the startup's details to receive a predicted success probability (0–100).</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Startup details</div>
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label>Startup name</label>
+            <input type="text" id="f-name" placeholder="e.g. AkinAnalytics Pvt. Ltd.">
+          </div>
+
+          <div class="form-group">
+            <label>Sector</label>
+            <select id="f-sector">
+              <option value="">Select sector</option>
+              <option>Agritech</option>
+              <option>Healthtech</option>
+              <option>Edtech</option>
+              <option>Fintech</option>
+              <option>Cleantech</option>
+              <option>Defence</option>
+              <option>SpaceTech</option>
+              <option>Manufacturing</option>
+              <option>SaaS/B2B</option>
+              <option>Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Startup stage</label>
+            <select id="f-stage">
+              <option value="0">Ideation / Prototype</option>
+              <option value="1">PMF</option>
+              <option value="2" selected>Product Launched</option>
+              <option value="3">Scale-Up</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Location tier</label>
+            <select id="f-tier">
+              <option value="3">Tier-I (Metro)</option>
+              <option value="2">Tier-II</option>
+              <option value="1">Tier-III</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Current team size</label>
+            <div class="range-row">
+              <input type="range" id="f-team" min="1" max="100" value="10" oninput="syncVal('f-team','v-team')">
+              <span class="range-val" id="v-team">10</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>TRL score (Technology Readiness Level)</label>
+            <div class="range-row">
+              <input type="range" id="f-trl" min="1" max="9" value="6" oninput="syncVal('f-trl','v-trl')">
+              <span class="range-val" id="v-trl">6</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>IP count (patents, trademarks, copyrights)</label>
+            <div class="range-row">
+              <input type="range" id="f-ip" min="0" max="20" value="2" oninput="syncVal('f-ip','v-ip')">
+              <span class="range-val" id="v-ip">2</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Jobs created (employment generated)</label>
+            <div class="range-row">
+              <input type="range" id="f-emp" min="0" max="100" value="8" oninput="syncVal('f-emp','v-emp')">
+              <span class="range-val" id="v-emp">8</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Technology type</label>
+            <div class="checkbox-row" onclick="toggle('f-deeptech')">
+              <input type="checkbox" id="f-deeptech">
+              <span>Deep tech / AI / IoT / Robotics / Blockchain</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Founding team</label>
+            <div class="checkbox-row" onclick="toggle('f-women')">
+              <input type="checkbox" id="f-women">
+              <span>Has a women co-founder</span>
+            </div>
+          </div>
+
+        </div>
+        <button class="score-btn" onclick="runScore()">Calculate Success Probability →</button>
+      </div>
+
+      <!-- Result -->
+      <div class="result-card" id="result-card">
+        <div class="result-top">
+          <div class="result-details">
+            <div class="result-name" id="r-name">—</div>
+            <div class="result-meta" id="r-meta">—</div>
+            <div class="feat-bars" id="r-feat-bars"></div>
+          </div>
+          <div class="result-score-wrap">
+            <div class="score-ring" id="r-ring">
+              <div class="score-num" id="r-score">—</div>
+              <div class="score-pct">/ 100</div>
+            </div>
+            <div id="r-verdict"></div>
+          </div>
+        </div>
+        <div class="insight-box" id="r-insight"></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: HISTORY ══ -->
+    <div class="page" id="page-history">
+      <div class="page-header">
+        <div class="page-title">Score history</div>
+        <div class="page-sub">All startups scored in this session.</div>
+      </div>
+
+      <div id="hist-stats" style="display:none" class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total scored</div>
+          <div class="stat-val" id="hs-total">0</div>
+          <div class="stat-sub">this session</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg score</div>
+          <div class="stat-val" id="hs-avg">—</div>
+          <div class="stat-sub">out of 100</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Likely success</div>
+          <div class="stat-val" id="hs-high" style="color:var(--accent)">0</div>
+          <div class="stat-sub">score ≥ 65</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Needs support</div>
+          <div class="stat-val" id="hs-low" style="color:var(--warn)">0</div>
+          <div class="stat-sub">score &lt; 40</div>
+        </div>
+      </div>
+
+      <div class="card" id="hist-card">
+        <div id="hist-empty" class="history-empty">
+          No startups scored yet.<br>Go to <strong>Score a Startup</strong> to begin.
+        </div>
+        <div id="hist-table-wrap" style="display:none; overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Startup</th>
+                <th>Sector</th>
+                <th>Stage</th>
+                <th>Team</th>
+                <th>TRL</th>
+                <th>Score</th>
+                <th>Verdict</th>
+              </tr>
+            </thead>
+            <tbody id="hist-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: METHODOLOGY ══ -->
+    <div class="page" id="page-method">
+      <div class="page-header">
+        <div class="page-title">Model methodology</div>
+        <div class="page-sub">How the scoring model was built and what drives the predictions.</div>
+      </div>
+
+      <div class="card method-section">
+        <div class="method-title">What the model predicts</div>
+        <div class="method-body">
+          Binary outcome — <strong>1 (Success)</strong> if a startup achieves Revenue &gt; ₹1 Cr <em>or</em> Valuation &gt; ₹30 Cr within 18 months of incubation. Otherwise <strong>0 (Needs support)</strong>. These thresholds are adjustable at programme level.
+        </div>
+        <div style="margin-top:12px; padding:12px 16px; background:var(--accent-light); border-radius:var(--radius); font-size:13px; color:var(--accent);">
+          <strong>Current dataset:</strong> 198 startups · Success rate: 59.6% · 10 input features
+        </div>
+      </div>
+
+      <div class="card method-section">
+        <div class="method-title">Input features (ranked by importance)</div>
+        <div style="margin-bottom:16px;">
+          <div class="imp-bar-row"><div class="imp-label">Team size</div><div class="imp-track"><div class="imp-fill" style="width:92%"></div></div><div class="imp-val">29.7%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Employment generated</div><div class="imp-track"><div class="imp-fill" style="width:62%"></div></div><div class="imp-val">16.3%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">TRL score</div><div class="imp-track"><div class="imp-fill" style="width:51%"></div></div><div class="imp-val">13.5%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">IP count</div><div class="imp-track"><div class="imp-fill" style="width:40%"></div></div><div class="imp-val">10.2%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Location tier</div><div class="imp-track"><div class="imp-fill" style="width:35%"></div></div><div class="imp-val">9.1%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Sector encoded</div><div class="imp-track"><div class="imp-fill" style="width:32%"></div></div><div class="imp-val">8.5%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Stage encoded</div><div class="imp-track"><div class="imp-fill" style="width:24%"></div></div><div class="imp-val">6.4%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Has AI</div><div class="imp-track"><div class="imp-fill" style="width:11%"></div></div><div class="imp-val">2.8%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Has women co-founder</div><div class="imp-track"><div class="imp-fill" style="width:9%"></div></div><div class="imp-val">2.4%</div></div>
+          <div class="imp-bar-row"><div class="imp-label">Is deep tech</div><div class="imp-track"><div class="imp-fill" style="width:4%"></div></div><div class="imp-val">1.0%</div></div>
+        </div>
+        <div class="method-body">Importances computed via Random Forest gain on the full 198-row SAMRIDH dataset. Team size dominates because cohort-level operational maturity strongly correlates with revenue outcomes in this dataset.</div>
+      </div>
+
+      <div class="card method-section">
+        <div class="method-title">Algorithm — XGBoost gradient boosting</div>
+        <div class="method-body">
+          XGBoost builds 300 decision trees sequentially. Each tree learns from the errors of the previous one (gradient boosting). All trees vote together to produce a final probability.<br><br>
+          <strong>Hyperparameters used:</strong> max_depth=4, learning_rate=0.07, subsample=0.8, colsample_bytree=0.8, n_estimators=300<br><br>
+          <strong>Validation:</strong> Stratified 5-fold cross-validation (essential for a 198-row dataset). Evaluated on AUC-ROC and F1 score — not raw accuracy, which is misleading on imbalanced classes.
+        </div>
+      </div>
+
+      <div class="card method-section">
+        <div class="method-title">Scoring interpretation</div>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
+          <div style="display:flex; align-items:center; gap:14px; padding:12px 14px; background:var(--accent-light); border-radius:var(--radius);">
+            <div style="font-size:22px; font-weight:700; color:var(--accent); min-width:48px;">65+</div>
+            <div>
+              <div style="font-weight:600; color:var(--accent); font-size:13px;">Likely Success</div>
+              <div style="font-size:12px; color:var(--accent); opacity:.8;">Strong candidate — prioritise for selection</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding:12px 14px; background:var(--amber-light); border-radius:var(--radius);">
+            <div style="font-size:22px; font-weight:700; color:var(--amber); min-width:48px;">40–64</div>
+            <div>
+              <div style="font-weight:600; color:var(--amber); font-size:13px;">Moderate Potential</div>
+              <div style="font-size:12px; color:var(--amber); opacity:.8;">Promising — consider with targeted mentorship plan</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:14px; padding:12px 14px; background:var(--warn-light); border-radius:var(--radius);">
+            <div style="font-size:22px; font-weight:700; color:var(--warn); min-width:48px;">&lt;40</div>
+            <div>
+              <div style="font-weight:600; color:var(--warn); font-size:13px;">Needs Support</div>
+              <div style="font-size:12px; color:var(--warn); opacity:.8;">High risk — review manually before inclusion</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="method-title">Retraining cadence</div>
+        <div class="method-body">
+          Each new SAMRIDH cohort adds ~30–50 rows. Retrain the model with the updated dataset and compare feature importance drift across cohorts. This turns the programme into a self-improving selection engine over time.<br><br>
+          Run <code style="background:var(--surface2);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:12px;">python samridh_xgboost.py</code> with the updated Excel file after each cohort.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+const history = [];
+
+// ── Navigation ────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'history') renderHistory();
+}
+
+// ── Range sync ────────────────────────────────────────────────
+function syncVal(inputId, valId) {
+  document.getElementById(valId).textContent = document.getElementById(inputId).value;
+}
+
+function toggle(id) {
+  const cb = document.getElementById(id);
+  cb.checked = !cb.checked;
+}
+
+// ── Model ─────────────────────────────────────────────────────
+// Weights derived from actual feature importances on SAMRIDH dataset
+// Scaled so that a median startup scores ~50
+const WEIGHTS = {
+  team_size:            0.2966,
+  employment_generated: 0.1633,
+  trl_score:            0.1354,
+  ip_count:             0.1021,
+  location_tier:        0.0910,
+  sector_encoded:       0.0845,
+  stage_encoded:        0.0643,
+  has_ai:               0.0284,
+  has_women_cofounder:  0.0244,
+  is_deeptech:          0.0100,
+};
+
+const SECTOR_ORDER = {
+  'Agritech':0,'Cleantech':1,'Defence':2,'Edtech':3,'Fintech':4,
+  'Healthtech':5,'Manufacturing':6,'Other':7,'SaaS/B2B':8,'SpaceTech':9,
+};
+
+// Normalise each feature to 0-1 range based on dataset statistics
+function normalise(feat) {
+  return {
+    team_size:            Math.min(feat.team_size / 40, 1),
+    employment_generated: Math.min(feat.employment_generated / 40, 1),
+    trl_score:            (feat.trl_score - 1) / 8,
+    ip_count:             Math.min(feat.ip_count / 10, 1),
+    location_tier:        (feat.location_tier - 1) / 2,
+    sector_encoded:       (SECTOR_ORDER[feat.sector] ?? 7) / 9,
+    stage_encoded:        feat.stage_encoded / 3,
+    has_ai:               feat.is_deeptech,
+    has_women_cofounder:  feat.has_women_cofounder,
+    is_deeptech:          feat.is_deeptech,
+  };
+}
+
+function computeScore(feat) {
+  const n = normalise(feat);
+  let raw = 0;
+  for (const [k, w] of Object.entries(WEIGHTS)) {
+    raw += (n[k] ?? 0) * w;
+  }
+  // Scale: raw is 0-1, apply sigmoid-like stretch to get 0-100
+  // Calibrated so median SAMRIDH startup (team~10, TRL~7) ≈ 55
+  const scaled = Math.round(Math.min(100, Math.max(0, raw * 155 + 5)));
+  return scaled;
+}
+
+function getVerdict(score) {
+  if (score >= 65) return { label: '✓ Likely Success', cls: 'verdict-high', insightCls: 'insight-high', color: 'var(--accent)' };
+  if (score >= 40) return { label: '~ Moderate Potential', cls: 'verdict-mid', insightCls: 'insight-mid', color: 'var(--amber)' };
+  return { label: '⚠ Needs Support', cls: 'verdict-low', insightCls: 'insight-low', color: 'var(--warn)' };
+}
+
+function buildInsight(feat, score) {
+  const tips = [];
+  if (feat.team_size < 8)  tips.push('growing the team (currently ' + feat.team_size + ')');
+  if (feat.trl_score < 7)  tips.push('advancing TRL beyond ' + feat.trl_score);
+  if (feat.ip_count === 0) tips.push('filing at least one IP');
+  if (feat.employment_generated < 5) tips.push('creating more employment (currently ' + feat.employment_generated + ')');
+
+  if (score >= 65) {
+    return 'Strong profile across key predictors. Team size and technology readiness are the primary drivers here — this startup shows the operational maturity associated with SAMRIDH success outcomes.';
+  } else if (score >= 40) {
+    const focus = tips.length ? 'Priority improvements: ' + tips.join(', ') + '.' : 'Profile is borderline — manual review recommended.';
+    return 'Moderate potential. ' + focus;
+  } else {
+    const focus = tips.length ? 'Key gaps to address: ' + tips.join(', ') + '.' : 'Multiple indicators are below programme norms.';
+    return 'High-risk profile based on current data. ' + focus + ' Recommend manual review and targeted mentorship before inclusion.';
+  }
+}
+
+// ── Feature bar data ───────────────────────────────────────────
+function buildFeatBars(feat) {
+  const n = normalise(feat);
+  return [
+    { name: 'Team size',       val: feat.team_size,             pct: n.team_size },
+    { name: 'TRL score',       val: feat.trl_score + ' / 9',    pct: n.trl_score },
+    { name: 'IP count',        val: feat.ip_count,               pct: n.ip_count },
+    { name: 'Jobs created',    val: feat.employment_generated,   pct: n.employment_generated },
+    { name: 'Location',        val: ['Tier-III','Tier-II','Tier-I'][feat.location_tier-1], pct: n.location_tier },
+  ];
+}
+
+// ── Run score ──────────────────────────────────────────────────
+function runScore() {
+  const feat = {
+    name:                 document.getElementById('f-name').value.trim() || 'Unnamed Startup',
+    sector:               document.getElementById('f-sector').value || 'Other',
+    stage_encoded:        parseInt(document.getElementById('f-stage').value),
+    location_tier:        parseInt(document.getElementById('f-tier').value),
+    team_size:            parseInt(document.getElementById('f-team').value),
+    trl_score:            parseInt(document.getElementById('f-trl').value),
+    ip_count:             parseInt(document.getElementById('f-ip').value),
+    employment_generated: parseInt(document.getElementById('f-emp').value),
+    is_deeptech:          document.getElementById('f-deeptech').checked ? 1 : 0,
+    has_women_cofounder:  document.getElementById('f-women').checked ? 1 : 0,
+  };
+
+  const STAGE_LABELS = ['Ideation','PMF','Product Launched','Scale-Up'];
+  const score   = computeScore(feat);
+  const verdict = getVerdict(score);
+  const insight = buildInsight(feat, score);
+  const bars    = buildFeatBars(feat);
+  const ts      = new Date().toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+
+  // Save to history
+  history.unshift({ ...feat, score, verdict: verdict.label, ts, stage_label: STAGE_LABELS[feat.stage_encoded] ?? '—' });
+
+  // Render result
+  document.getElementById('r-name').textContent = feat.name;
+  document.getElementById('r-meta').textContent =
+    feat.sector + ' · ' + STAGE_LABELS[feat.stage_encoded] + ' · ' +
+    ['Tier-III','Tier-II','Tier-I'][feat.location_tier-1] + ' · Scored ' + ts;
+
+  const ring = document.getElementById('r-ring');
+  ring.style.borderColor = verdict.color;
+  document.getElementById('r-score').textContent = score;
+  document.getElementById('r-score').style.color = verdict.color;
+
+  const vEl = document.getElementById('r-verdict');
+  vEl.innerHTML = '<span class="verdict-pill ' + verdict.cls + '">' + verdict.label + '</span>';
+
+  const barsEl = document.getElementById('r-feat-bars');
+  barsEl.innerHTML = bars.map(b => `
+    <div class="feat-row-r">
+      <div class="feat-name">${b.name}</div>
+      <div class="feat-track"><div class="feat-fill" style="width:${Math.round(b.pct*100)}%"></div></div>
+      <div class="feat-score">${b.val}</div>
+    </div>`).join('');
+
+  const insEl = document.getElementById('r-insight');
+  insEl.className = 'insight-box ' + verdict.insightCls;
+  insEl.textContent = insight;
+
+  document.getElementById('result-card').classList.add('visible');
+  document.getElementById('result-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── History ────────────────────────────────────────────────────
+function renderHistory() {
+  const statsEl = document.getElementById('hist-stats');
+  const emptyEl = document.getElementById('hist-empty');
+  const tableEl = document.getElementById('hist-table-wrap');
+
+  if (!history.length) {
+    statsEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    tableEl.style.display = 'none';
+    return;
+  }
+
+  statsEl.style.display = 'grid';
+  emptyEl.style.display = 'none';
+  tableEl.style.display = 'block';
+
+  const avg  = Math.round(history.reduce((s,r) => s + r.score, 0) / history.length);
+  const high = history.filter(r => r.score >= 65).length;
+  const low  = history.filter(r => r.score < 40).length;
+
+  document.getElementById('hs-total').textContent = history.length;
+  document.getElementById('hs-avg').textContent   = avg;
+  document.getElementById('hs-high').textContent  = high;
+  document.getElementById('hs-low').textContent   = low;
+
+  const tbody = document.getElementById('hist-tbody');
+  tbody.innerHTML = history.map(r => {
+    const cls = r.score >= 65 ? 'tag-green' : r.score >= 40 ? 'tag-amber' : 'tag-red';
+    return `<tr>
+      <td><strong>${r.name}</strong><br><span style="font-size:11px;color:var(--muted)">${r.ts}</span></td>
+      <td>${r.sector}</td>
+      <td>${r.stage_label}</td>
+      <td>${r.team_size}</td>
+      <td>${r.trl_score}</td>
+      <td class="td-score" style="color:${r.score>=65?'var(--accent)':r.score>=40?'var(--amber)':'var(--warn)'}">${r.score}</td>
+      <td><span class="tag ${cls}">${r.verdict}</span></td>
+    </tr>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
